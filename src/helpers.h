@@ -10,6 +10,8 @@ using std::string;
 using std::vector;
 
 const double LANE_WIDTH = 4.0;
+const double ACCELERATION = 0.2;
+
 int dToLane(double d) {
   return (int) (d / LANE_WIDTH);
 }

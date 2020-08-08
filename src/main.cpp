@@ -51,7 +51,7 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
 
-  double target_velocity = 22.352; // 50 mph in m/s speed limit
+  double target_velocity = 22.00; // ~50 mph in m/s speed limit
   
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
@@ -93,9 +93,7 @@ int main() {
 
           json msgJson;
 
-          
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
+
 
           // START
           /**
@@ -106,6 +104,10 @@ int main() {
           
           double desired_velocity = car_speed;
           int desired_lane = dToLane(car_d);
+          
+          if (desired_velocity < target_velocity - ACCELERATION) {
+            desired_velocity += ACCELERATION;
+          }
           
           
           
@@ -149,9 +151,48 @@ int main() {
           
           
           
-          // transform to local car coordinates
-          for(int i = 0; i < planned_x.size(); i++) {
+          // transform planned xy coordinates to local car coordinates
+          for (int i = 0; i < planned_x.size(); i++) {
+            double translation_x = planned_x[i]-car_x;
+            double translation_y = planned_y[i]-car_y;
+            
+            planned_x[i] = translation_x * cos(0 - car_yaw) - translation_y * sin(0 - car_yaw);
+            planned_y[i] = translation_x * sin(0 - car_yaw) + translation_y * cos(0 - car_yaw);
           }
+          
+          tk::spline s;
+          
+          s.set_points(planned_x, planned_y);
+          
+                    
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+          
+          for (int i = 0; i < previous_path_x.size(); i++) {
+            next_x_vals.push_back(previous_path_x[i]);
+            next_y_vals.push_back(previous_path_y[i]);
+          }
+          
+          
+          
+          double target_x = 30;
+          double target_y = s(target_x);
+          double target_dist = sqrt(target_x * target_x + target_y * target_y);
+          double N = target_dist / (0.02 * desired_velocity);
+          
+          // Plan for 50 points in future
+          for (int i = 1; i <= 50 - next_x_vals.size(); i++) {
+            double x = i * N;
+            double y = spline(x);
+            
+            double x_map_coordinates = (x * cos(car_yaw) - y * sin(car_yaw)) + car_x;
+            double y_map_coordinates = (x * cos(car_yaw) + y * cos(car_yaw)) + car_y;
+            
+            next_x_vals.push_back(x_map_coordinates);
+            next_y_vals.push_back(y_map_coordinates);
+          }
+          
+          
           
           
           // END
