@@ -9,6 +9,15 @@
 using std::string;
 using std::vector;
 
+const double LANE_WIDTH = 4.0;
+int dToLane(double d) {
+  return (int) (d / LANE_WIDTH);
+}
+double laneToD(int lane) {
+  return LANE_WIDTH * lane + LANE_WIDTH / 2;
+}
+
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 //   else the empty string "" will be returned.

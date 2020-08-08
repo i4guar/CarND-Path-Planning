@@ -6,6 +6,7 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
+#include "spline.h"
 #include "json.hpp"
 
 // for convenience
@@ -50,6 +51,8 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
 
+  double target_velocity = 22.352; // 50 mph in m/s speed limit
+  
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -90,15 +93,69 @@ int main() {
 
           json msgJson;
 
+          
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
+          // START
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
+          int prev_path_size = previous_path_x.size();
+          
+          double desired_velocity = car_speed;
+          int desired_lane = dToLane(car_d);
+          
+          
+          
+          vector<double> planned_x;
+          vector<double> planned_y;
+          
+          if(prev_path_size < 2)
+          {
+            // Use two points that make the path tangent to the car
+            double prev_car_x = car_x - cos(car_yaw);
+            double prev_car_y = car_y - sin(car_yaw);
+            
+            planned_x.push_back(prev_car_x);
+            planned_y.push_back(prev_car_y);
 
+            planned_x.push_back(car_x);
+            planned_y.push_back(car_y);
+          }
+          else {
+          	planned_x.push_back(previous_path_x[prev_path_size - 1]);
+            planned_y.push_back(previous_path_y[prev_path_size - 1]);
 
+            planned_x.push_back(previous_path_x[prev_path_size - 2]);
+            planned_y.push_back(previous_path_y[prev_path_size - 2]);
+          }
+          
+          // waypoints in every 30 meters
+          double waypoint_distances = 30.0;
+          vector<double> next_waypoint0 = getXY(car_s + waypoint_distances, laneToD(desired_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_waypoint1 = getXY(car_s + 2* waypoint_distances, laneToD(desired_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_waypoint2 = getXY(car_s + 3* waypoint_distances, laneToD(desired_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+         
+          planned_x.push_back(next_waypoint0[0]);
+          planned_y.push_back(next_waypoint0[1]);
+          
+          planned_x.push_back(next_waypoint1[0]);
+          planned_y.push_back(next_waypoint1[1]);
+          
+          planned_x.push_back(next_waypoint2[0]);
+          planned_y.push_back(next_waypoint2[1]);
+          
+          
+          
+          // transform to local car coordinates
+          for(int i = 0; i < planned_x.size(); i++) {
+          }
+          
+          
+          // END
+          
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
