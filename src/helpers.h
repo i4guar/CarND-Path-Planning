@@ -10,7 +10,12 @@ using std::string;
 using std::vector;
 
 const double LANE_WIDTH = 4.0;
-const double ACCELERATION = 0.2;
+const double ACCELERATION = 0.5;
+const double TARGET_VELOCITY = 22.00; // ~50 mph in m/s speed limit
+
+double mphToMps(double speed_mph) {
+  return speed_mph / 2.24;
+}
 
 int dToLane(double d) {
   return (int) (d / LANE_WIDTH);
