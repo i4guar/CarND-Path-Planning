@@ -106,10 +106,6 @@ int main() {
           int desired_lane = current_lane;
           
           
-          if (prev_path_size > 0) {
-            car_s = end_path_s;
-          }
-          
           // target speed for each lane (max possible speed)
           vector<double> target_speed_for_lanes;
           
@@ -137,11 +133,11 @@ int main() {
               }    
             } else {
               // check if lane is blocked
-              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - 2 * SAFETY_DIST < s && s < car_s)) {
+              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - SAFETY_DIST < s && s < car_s)) {
                 target_speed_for_lanes[lane] = 0.0;
               } 
               // if not, check road ahead and use speed of car as target speed
-              else if (car_s + 2 * SAFETY_DIST > s && s > car_s) {
+              else if (car_s + 1.5 * SAFETY_DIST > s && s > car_s) {
                 if( target_speed_for_lanes[lane] > v) {
                   target_speed_for_lanes[lane] = v;
                 }
@@ -212,6 +208,9 @@ int main() {
           
           // Set 3 waypoints in future
           double d = laneToD(desired_lane);
+          if (prev_path_size > 0) {
+            car_s = end_path_s;
+          }
           vector<double> next_waypoint0 = getXY(car_s + WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint1 = getXY(car_s + 2 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint2 = getXY(car_s + 3 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
