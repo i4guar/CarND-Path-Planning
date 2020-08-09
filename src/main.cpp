@@ -95,15 +95,13 @@ int main() {
 
           // START
           /**
-           * TODO: define a path made up of (x,y) points that the car will visit
+           * Define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
           int prev_path_size = previous_path_x.size();
           
           double desired_velocity = mphToMps(car_speed);
-          std::cout << "speed_value_car: " << car_speed << std::endl;
 
-          std::cout << "d_value_car: " << car_d << std::endl;
           int current_lane = dToLane(car_d);
           int desired_lane = current_lane;
           
@@ -112,8 +110,9 @@ int main() {
             car_s = end_path_s;
           }
           
+          // target speed for each lane (max possible speed)
           vector<double> target_speed_for_lanes;
-          // target speed for each lane
+          
           target_speed_for_lanes.push_back(SPEED_LIMIT);
           target_speed_for_lanes.push_back(SPEED_LIMIT);
           target_speed_for_lanes.push_back(SPEED_LIMIT);
@@ -121,50 +120,39 @@ int main() {
           // for each car
           for (int i = 0; i < sensor_fusion.size(); i++) {
             int lane = dToLane(sensor_fusion[i][6]);
-            int id = sensor_fusion[i][0];
-            double x = sensor_fusion[i][1];
-            double y = sensor_fusion[i][2];
             double vx = sensor_fusion[i][3];
             double vy = sensor_fusion[i][4];
             double s = sensor_fusion[i][5];
 
             double v = sqrt(vx*vx + vy*vy);
-            
-            //std::cout << "lane: " << lane << std::endl;
-            //std::cout << "current_lane: " << current_lane << std::endl;
+           
+            // check if observed car is in same lane
             if (current_lane == lane) {
-              //std::cout << "SAME_LANE" << std::endl;
-              
-
-              //std::cout << "My car:" << car_s << std::endl;
-              //std::cout << "car:" << s << std::endl;
-
+              // If the car is infront and within safety distance target the speed of the car infront
               if (car_s + SAFETY_DIST > s && s > car_s) {
-                std::cout << "CAR INFRONT" << std::endl;
+                // only use that speed if it is lower than the existing target speed for that lane
                 if( target_speed_for_lanes[lane] > v) {
                   target_speed_for_lanes[lane] = v;
                 }
               }    
             } else {
               // check if lane is blocked
-              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - SAFETY_DIST < s && s < car_s)) {
+              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - 2 * SAFETY_DIST < s && s < car_s)) {
                 target_speed_for_lanes[lane] = 0.0;
-                continue;
               } 
-              if (car_s + 2 * SAFETY_DIST > s && s > car_s) {
+              // if not, check road ahead and use speed of car as target speed
+              else if (car_s + 2 * SAFETY_DIST > s && s > car_s) {
                 if( target_speed_for_lanes[lane] > v) {
                   target_speed_for_lanes[lane] = v;
                 }
-                continue;
-              } 
-              
+              }               
             }
           }
 
           
-
-          vector<int> possible_lanes = possibleLanes(current_lane);
           // consider lane change
+          vector<int> possible_lanes = possibleLanes(current_lane);
+          // if the target speed of another lane is higher than the currently desired lane, change the desired lane to it
           for (int i = 0; i < possible_lanes.size(); i++) {
             if (target_speed_for_lanes[possible_lanes[i]] - target_speed_for_lanes[desired_lane] > 0) {
               desired_lane = possible_lanes[i];
@@ -172,9 +160,9 @@ int main() {
           }
 
           
-          double target_speed = target_speed_for_lanes[desired_lane];
+          // calculate desired velocity depending on the target speed of the desired lane 
           
-          std::cout << "target_speed: " << target_speed << std::endl;
+          double target_speed = target_speed_for_lanes[desired_lane];
           double speed_diff = target_speed - desired_velocity;
           
           if (abs(speed_diff) < ACCELERATION) {
@@ -184,19 +172,20 @@ int main() {
           } else {
             desired_velocity -= ACCELERATION;
           }
-          std::cout << "desired_speed: " << desired_velocity << std::endl;
           
+          
+          // Calculate path matching desired lane and desired velocity
           
           vector<double> planned_x;
           vector<double> planned_y;
           
-          
+          // origin of local car coordinates
           double x_origin = car_x;
           double y_origin = car_y;
           double yaw_origin = car_yaw;
           
+          // use previous calculated path to make new path tangent to it
           if(prev_path_size < 2) {
-            // Use two points that make the path tangent to the car
             double prev_car_x = car_x - cos(car_yaw);
             double prev_car_y = car_y - sin(car_yaw);
             
@@ -221,10 +210,8 @@ int main() {
             yaw_origin = atan2(last_y - prev_y, last_x - prev_x);
           }
           
-          //std::cout << "lane: " << desired_lane << std::endl;
+          // Set 3 waypoints in future
           double d = laneToD(desired_lane);
-          //std::cout << "d: " << d << std::endl;
-
           vector<double> next_waypoint0 = getXY(car_s + WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint1 = getXY(car_s + 2 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint2 = getXY(car_s + 3 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
@@ -242,47 +229,34 @@ int main() {
           
           // transform planned xy coordinates to local car coordinates
           for (int i = 0; i < planned_x.size(); i++) {
-            //std::cout << "SIZE " << planned_x.size() << std::endl;
             double translation_x = planned_x[i] - x_origin;
             double translation_y = planned_y[i] - y_origin;
-            //std::cout << "BEFORE x: " << planned_x[i] << std::endl;
-            //std::cout << "BEFORE y: " << planned_y[i] << std::endl;
+            
             planned_x[i] = translation_x * cos(0 - yaw_origin) - translation_y * sin(0 - yaw_origin);
             planned_y[i] = translation_x * sin(0 - yaw_origin) + translation_y * cos(0 - yaw_origin);
-            //std::cout << "AFTER x: " << planned_x[i] << std::endl;
-            //std::cout << "AFTER y: " << planned_y[i] << std::endl; 
           }
           
-          
-          
-          
+
+          // create smooth path with spline
           tk::spline s;
           
           s.set_points(planned_x, planned_y);
-          
                     
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           
+          // reuse already calculated path from the last iteration 
           for (int i = 0; i < previous_path_x.size(); i++) {
-            //std::cout << "FINAL_Prev x: " << previous_path_x[i] << std::endl;
-            //std::cout << "FINAL_prev y: " << previous_path_y[i] << std::endl; 
             next_x_vals.push_back(previous_path_x[i]);
             next_y_vals.push_back(previous_path_y[i]);
           }
           
-          
+          // calculate delta x to read spline from
           double target_x = WAYPOINT_DIST;
           double target_y = s(target_x);
-
-          //std::cout << "target y: " << target_y << std::endl;
-
           double target_dist = sqrt(target_x * target_x + target_y * target_y);
-          //std::cout << "target_dist: " << target_dist << std::endl;
-
           double N = target_dist / (0.02 * desired_velocity);
           double x_step = target_x / N;
-          //std::cout << "N: " << N << std::endl;
    
           int size = next_x_vals.size();
           
@@ -290,22 +264,15 @@ int main() {
           for (int i = 1; next_x_vals.size() < POINTS_TO_PLAN; i++) {
             double x = i * x_step;
             double y = s(x);
-            //std::cout << "B_FINAL x: " << x << std::endl;
-            //std::cout << "B_FINAL y: " << y << std::endl;
-            
-            // transform back
+            // transform back from local car to map coordinates
             double x_map_coordinates = (x * cos(yaw_origin) - y * sin(yaw_origin)) + x_origin;
             double y_map_coordinates = (x * sin(yaw_origin) + y * cos(yaw_origin)) + y_origin;
-            
-            
-            //std::cout << "FINAL x: " << x_map_coordinates << std::endl;
-            //std::cout << "FINAL y: " << y_map_coordinates << std::endl; 
             
             next_x_vals.push_back(x_map_coordinates);
             next_y_vals.push_back(y_map_coordinates);
           }
           
-          //std::cout << "ONE RUN" << std::endl; 
+
           // END
           
           msgJson["next_x"] = next_x_vals;
