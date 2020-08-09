@@ -9,9 +9,29 @@
 using std::string;
 using std::vector;
 
-const double LANE_WIDTH = 4.0;
-const double ACCELERATION = 0.5;
-const double TARGET_VELOCITY = 22.00; // ~50 mph in m/s speed limit
+const double LANE_WIDTH = 4.0; // m
+const double ACCELERATION = 1.5; // m/s^2
+const double SPEED_LIMIT = 22.00; // ~49 mph in m/s speed limit
+const double SAFETY_DIST = 20.0; // m
+const double WAYPOINT_DIST = 30.0; // m
+const double POINTS_TO_PLAN = 50;
+
+
+vector<int> possibleLanes(int lane) {
+  // Returns lanes which can be switched to
+  vector<int> possible_lanes;
+  if(lane == 0) {
+    possible_lanes.push_back(1);
+  }
+  if(lane == 1) {
+    possible_lanes.push_back(0);
+    possible_lanes.push_back(2);
+  }
+  if(lane == 2) {
+    possible_lanes.push_back(1);
+  }
+  return possible_lanes;
+}
 
 double mphToMps(double speed_mph) {
   return speed_mph / 2.24;
