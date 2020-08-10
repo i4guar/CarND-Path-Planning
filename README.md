@@ -4,6 +4,7 @@ As part of the Self-driving nanodegree programm I have written a Path Planning A
 [//]: # (Image References)
 
 [traffic_1]: ./res/traffic_1.png "Traffic 1"
+[traffic_2]: ./res/traffic_2.png "Traffic 2"
 [follow_1]: ./res/follow_1.png "Follow 1"
 [follow_2]: ./res/follow_2.png "Follow 2"
 [lane_change_1]: ./res/lane_change_1.png "Lane Change 1"
@@ -18,6 +19,7 @@ In this project your goal is to safely navigate around a virtual highway with ot
 
 The car is able to navigate trafic,
 
+![alt text][traffic_2]
 ![alt text][traffic_1]
 
 follow cars and
