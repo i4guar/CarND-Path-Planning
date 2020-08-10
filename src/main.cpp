@@ -224,16 +224,13 @@ int main() {
           }
           vector<double> next_waypoint0 = getXY(car_s + WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint1 = getXY(car_s + 2 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_waypoint2 = getXY(car_s + 3 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
          
           planned_x.push_back(next_waypoint0[0]);
           planned_y.push_back(next_waypoint0[1]);
           
           planned_x.push_back(next_waypoint1[0]);
           planned_y.push_back(next_waypoint1[1]);
-          
-          planned_x.push_back(next_waypoint2[0]);
-          planned_y.push_back(next_waypoint2[1]);
+
           
           
           

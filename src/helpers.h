@@ -13,8 +13,8 @@ const double LANE_WIDTH = 4.0; // m
 const double ACCELERATION = 1.5; // m/s^2
 const double SPEED_LIMIT = 21.75; // ~49 mph in m/s speed limit
 const double SAFETY_DIST = 50.0; // m
-const double WAYPOINT_DIST = 30.0; // m
-const double POINTS_TO_PLAN = 50;
+const double WAYPOINT_DIST = 25.0; // m
+const double POINTS_TO_PLAN = 30;
 
 
 vector<int> possibleLanes(int lane) {
