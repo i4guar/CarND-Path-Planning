@@ -51,7 +51,10 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+  int desired_lane = 1; // starting lane
+  bool changing_lane = false;
+
+  h.onMessage([&desired_lane,&changing_lane,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
@@ -103,7 +106,9 @@ int main() {
           double desired_velocity = mphToMps(car_speed);
 
           int current_lane = dToLane(car_d);
-          int desired_lane = current_lane;
+          if( fabs(laneToD(desired_lane) - car_d) < 0.1) {
+            changing_lane = false;
+          }
           
           
           // target speed for each lane (max possible speed)
@@ -126,6 +131,9 @@ int main() {
             if (current_lane == lane) {
               // If the car is infront and within safety distance target the speed of the car infront
               if (car_s + SAFETY_DIST > s && s > car_s) {
+                if (s - car_s < SAFETY_DIST * 0.8) {
+                  v -= ACCELERATION;
+                }
                 // only use that speed if it is lower than the existing target speed for that lane
                 if( target_speed_for_lanes[lane] > v) {
                   target_speed_for_lanes[lane] = v;
@@ -133,7 +141,7 @@ int main() {
               }    
             } else {
               // check if lane is blocked
-              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - SAFETY_DIST < s && s < car_s)) {
+              if ((car_s + SAFETY_DIST > s && s > car_s) || (car_s - SAFETY_DIST * 0.5 < s && s < car_s)) {
                 target_speed_for_lanes[lane] = 0.0;
               } 
               // if not, check road ahead and use speed of car as target speed
@@ -145,30 +153,33 @@ int main() {
             }
           }
 
-          
-          // consider lane change
-          vector<int> possible_lanes = possibleLanes(current_lane);
-          // if the target speed of another lane is higher than the currently desired lane, change the desired lane to it
-          for (int i = 0; i < possible_lanes.size(); i++) {
-            if (target_speed_for_lanes[possible_lanes[i]] - target_speed_for_lanes[desired_lane] > 0) {
-              desired_lane = possible_lanes[i];
+
+          // only consider lane change if not already changing lane 
+          if(!changing_lane) {
+            vector<int> possible_lanes = possibleLanes(current_lane);
+            // if the target speed of another lane is higher than the currently desired lane, change the desired lane to it
+            for (int i = 0; i < possible_lanes.size(); i++) {
+              if (target_speed_for_lanes[possible_lanes[i]] - target_speed_for_lanes[desired_lane] > 0) {
+                desired_lane = possible_lanes[i];
+                changing_lane = true;
+              }
             }
           }
 
-          
+          // only change velocity if not already wanting to change lane
+          if(!changing_lane) {
           // calculate desired velocity depending on the target speed of the desired lane 
-          
-          double target_speed = target_speed_for_lanes[desired_lane];
-          double speed_diff = target_speed - desired_velocity;
-          
-          if (abs(speed_diff) < ACCELERATION) {
-            desired_velocity = target_speed;
-          } else if (speed_diff > 0) {
-            desired_velocity += ACCELERATION;
-          } else {
-            desired_velocity -= ACCELERATION;
+            double target_speed = target_speed_for_lanes[desired_lane];
+            double speed_diff = target_speed - desired_velocity;
+
+            if (abs(speed_diff) < ACCELERATION) {
+              desired_velocity = target_speed;
+            } else if (speed_diff > 0) {
+              desired_velocity += ACCELERATION;
+            } else {
+              desired_velocity -= ACCELERATION;
+            }
           }
-          
           
           // Calculate path matching desired lane and desired velocity
           
@@ -213,16 +224,13 @@ int main() {
           }
           vector<double> next_waypoint0 = getXY(car_s + WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector<double> next_waypoint1 = getXY(car_s + 2 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_waypoint2 = getXY(car_s + 3 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
          
           planned_x.push_back(next_waypoint0[0]);
           planned_y.push_back(next_waypoint0[1]);
           
           planned_x.push_back(next_waypoint1[0]);
           planned_y.push_back(next_waypoint1[1]);
-          
-          planned_x.push_back(next_waypoint2[0]);
-          planned_y.push_back(next_waypoint2[1]);
+
           
           
           
