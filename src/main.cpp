@@ -131,6 +131,9 @@ int main() {
             if (current_lane == lane) {
               // If the car is infront and within safety distance target the speed of the car infront
               if (car_s + SAFETY_DIST > s && s > car_s) {
+                if (s - car_s < SAFETY_DIST * 0.8) {
+                  v -= ACCELERATION;
+                }
                 // only use that speed if it is lower than the existing target speed for that lane
                 if( target_speed_for_lanes[lane] > v) {
                   target_speed_for_lanes[lane] = v;
