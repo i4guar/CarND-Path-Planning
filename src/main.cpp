@@ -217,13 +217,14 @@ int main() {
             yaw_origin = atan2(last_y - prev_y, last_x - prev_x);
           }
           
-          // Set 3 waypoints in future
+          // Set 2 waypoints in future
           double d = laneToD(desired_lane);
           if (prev_path_size > 0) {
             car_s = end_path_s;
           }
-          vector<double> next_waypoint0 = getXY(car_s + WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_waypoint1 = getXY(car_s + 2 * WAYPOINT_DIST, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          double waypoint_dist = 2 * desired_velocity;
+          vector<double> next_waypoint0 = getXY(car_s + waypoint_dist, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_waypoint1 = getXY(car_s + 2 * waypoint_dist, d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
          
           planned_x.push_back(next_waypoint0[0]);
           planned_y.push_back(next_waypoint0[1]);
@@ -259,7 +260,7 @@ int main() {
           }
           
           // calculate delta x to read spline from
-          double target_x = WAYPOINT_DIST;
+          double target_x = waypoint_dist;
           double target_y = s(target_x);
           double target_dist = sqrt(target_x * target_x + target_y * target_y);
           double N = target_dist / (0.02 * desired_velocity);
